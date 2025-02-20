@@ -152,7 +152,7 @@ const changeVolume = (event: Event) => {
   box-sizing: border-box;
 }
 body {
-  background: url("BRICK10.JPG");
+  background: url("brick.jpg");
 }
 main {
   margin: auto;
