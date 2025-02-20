@@ -3,8 +3,8 @@ import path from "path";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { createServer as createHttpServer } from "http";
-import { pg, pgConnect } from "./config/db.config";
-import type { LeaderboardEntry } from "../../types/leaderboard";
+import { pgConnect } from "./config/db.config";
+import router from "./router";
 
 // Load environment variables
 const dev = process.env.NODE_ENV !== "production";
@@ -24,26 +24,7 @@ async function init() {
   const server = createHttpServer(app);
   app.use(express.json());
 
-  // Router
-
-  async function getDailyWord() {
-    const { name: word } = await fetch("https://trouve-mot.fr/api/daily").then(
-      (res) => res.json()
-    );
-    return word;
-  }
-
-  app.get("/api/daily", async (req, res) => {
-    const word = await getDailyWord();
-    res.json({ word });
-  });
-
-  app.get("/api/leaderboard", async (req, res) => {
-    const { rows } = await pg.query<LeaderboardEntry>(
-      "SELECT * FROM leaderboard LIMIT 5"
-    );
-    res.json(rows);
-  });
+  app.use(router);
 
   const vite = await createViteServer();
 

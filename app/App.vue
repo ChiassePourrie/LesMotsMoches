@@ -1,13 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import apiClient from "./lib/apiClient";
 import type { LeaderboardEntry } from "@/types/leaderboard";
+import { useStorage } from "@vueuse/core";
 
-const test = ref(0);
 const loadingAmount = ref(0);
 const loading = computed(() => loadingAmount.value !== 100);
 const word = ref<string | null>(null);
 const leaderboard = ref<LeaderboardEntry[]>([]);
+const id = useStorage<string>("user-id", null);
+const originalVote = useStorage<{ word?: string; vote?: number }>(
+  "original-vote",
+  {}
+);
+
+const voiceChoices: [string, number][] = [
+  ["Hideux", 2],
+  ["Moche", 1],
+  ["OK", -1],
+  ["Merveilleux", -2],
+];
+
+const currentVote = ref<number | null>(null);
+
+watch(currentVote, async (value) => {
+  originalVote.value.word = word.value as string;
+  originalVote.value.vote = value as number;
+  const result = await apiClient.postRequest<{ id: string }>("/api/save", {
+    id: id.value,
+    category: "general",
+    vote: value,
+  });
+  id.value = result.id;
+  const leaderboardEntries = await apiClient.getRequest<LeaderboardEntry[]>(
+    "/api/leaderboard"
+  );
+  leaderboard.value = leaderboardEntries;
+});
+
 onMounted(async () => {
   loadingAmount.value = 0;
   const { word: dailyWord } = await apiClient.getRequest<{ word: string }>(
@@ -17,11 +47,6 @@ onMounted(async () => {
   loadingAmount.value = 50;
   const leaderboardEntries = await apiClient.getRequest<LeaderboardEntry[]>(
     "/api/leaderboard"
-  );
-  console.log(
-    "\x1b[44m%s\x1b[0m",
-    "app/App.vue:21 leaderboardEntries",
-    leaderboardEntries
   );
   leaderboard.value = leaderboardEntries;
   loadingAmount.value = 100;
@@ -73,10 +98,14 @@ const changeVolume = (event: Event) => {
         <div class="window-body">
           <h2>" {{ word }} "</h2>
           <div class="choices">
-            <button>Hideux</button>
-            <button>Moche</button>
-            <button>OK</button>
-            <button>Merveilleux</button>
+            <button
+              v-for="[text, v] in voiceChoices"
+              :disabled="originalVote.vote === v"
+              :key="text"
+              @click="currentVote = v"
+            >
+              {{ text }}
+            </button>
           </div>
           <p>Tout vote est définitif !!!</p>
         </div>
@@ -134,7 +163,6 @@ main {
   grid-template-rows: auto 1fr auto;
   justify-content: center;
   align-items: center;
-  padding: 20px 30px;
   gap: 20px;
 }
 @keyframes bounce {
