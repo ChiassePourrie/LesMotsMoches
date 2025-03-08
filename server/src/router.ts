@@ -29,7 +29,7 @@ router.get("/api/daily", async (req, res) => {
 
 router.get("/api/leaderboard", async (req, res) => {
   const { rows } = await pg.query<LeaderboardEntry>(
-    "SELECT * FROM leaderboard LIMIT 5"
+    "SELECT * FROM leaderboard ORDER BY total_votes DESC LIMIT 5"
   );
   res.json(rows);
 });

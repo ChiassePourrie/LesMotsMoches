@@ -118,11 +118,27 @@ const changeVolume = (event: Event) => {
           <div class="title-bar-text">Mots les plus moches du monde</div>
         </div>
         <div class="window-body">
-          <ul>
-            <li v-for="({ word, total_votes }, i) in leaderboard" :key="word">
-              [{{ i + 1 }}] - {{ word }} ({{ total_votes }})
-            </li>
-          </ul>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Mot</th>
+                <th>Score</th>
+                <th>Votes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="({ word, total_votes, qte_votes }, i) in leaderboard"
+                :key="word"
+              >
+                <td>{{ i + 1 }}</td>
+                <td>{{ word }}</td>
+                <td>{{ total_votes }}</td>
+                <td>{{ qte_votes }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -215,5 +231,29 @@ main > img.title {
 .choices button {
   font-size: 20px;
   width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #000;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+  background-color: #e0e0e0;
 }
 </style>
