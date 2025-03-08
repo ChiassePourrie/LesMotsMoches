@@ -58,4 +58,10 @@ router.post("/api/save", async (req, res) => {
   }
 });
 
+router.post("/cron", async (req, res) => {
+  console.log("\x1b[44m%s\x1b[0m", "server/src/router.ts:63 req", req);
+  // 200
+  res.status(200);
+});
+
 export default router;
