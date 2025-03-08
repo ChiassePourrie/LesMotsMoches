@@ -5,14 +5,19 @@ import type { LeaderboardEntry } from "../../types/leaderboard";
 import type { Vote } from "../../types/votes";
 import { pg } from "./config/db.config";
 
-let dailyWord: string | null = null;
+async function updateDailyWord() {
+  // run pg function update_word_of_the_day
+  await pg.query("SELECT insert_word_of_the_day()");
+}
 
 async function getDailyWord() {
-  const { name: word } = await fetch("https://trouve-mot.fr/api/daily").then(
-    (res) => res.json()
+  const today = new Date().toISOString().split("T")[0];
+  const result = await pg.query(
+    "SELECT * FROM word_of_the_day WHERE selected_date = $1",
+    [today]
   );
-  dailyWord = word;
-  return word;
+  if (result.rowCount === 0) return null;
+  return result.rows[0].word;
 }
 
 const router = Router();
@@ -31,7 +36,7 @@ router.get("/api/leaderboard", async (req, res) => {
 
 router.post("/api/save", async (req, res) => {
   const { id, category, vote } = req.body as Partial<Vote>;
-  const word = dailyWord;
+  const word = await getDailyWord();
   if (
     typeof vote !== "number" ||
     !Number.isInteger(vote) ||
@@ -59,9 +64,16 @@ router.post("/api/save", async (req, res) => {
 });
 
 router.post("/cron", async (req, res) => {
-  console.log("\x1b[44m%s\x1b[0m", "server/src/router.ts:63 req", req);
-  // 200
-  res.status(200).send("OK");
+  if (!(process.env.CRON_HEADER && process.env.CRON_VALUE)) {
+    res.status(500).json({ error: "Cron not configured" });
+    return;
+  }
+  if (req.headers[process.env.CRON_HEADER] !== process.env.CRON_VALUE) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  await updateDailyWord();
+  res.json({ message: "Daily word updated" });
 });
 
 export default router;

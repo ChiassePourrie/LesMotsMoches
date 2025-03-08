@@ -44,6 +44,9 @@ onMounted(async () => {
     "/api/daily"
   );
   word.value = dailyWord;
+  if (word.value !== originalVote.value.word) {
+    originalVote.value = {};
+  }
   loadingAmount.value = 50;
   const leaderboardEntries = await apiClient.getRequest<LeaderboardEntry[]>(
     "/api/leaderboard"
